@@ -1,0 +1,236 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title> Employee Registration</title>
+    <script src="jquery-3.3.1.js"></script>
+    <script type="text/javascript">
+        function Validation() {
+            var data = "";
+            data += checkname();
+            data += checkaddress();
+            data += checkage();
+            if (data != "") {
+                alert(data);
+                return false;
+            }
+            else {
+                SaveData();
+            }
+        }
+
+        function checkname() {
+            var p = $("#txtname").val();
+            if (p == "") {
+                return 'please enter your name\n';
+            }
+            else {
+                return '';
+            }
+        }
+
+        function checkaddress() {
+            var p = $("#txtaddress").val();
+            if (p == "") {
+                return 'please enter your address\n';
+            }
+            else {
+                return '';
+            }
+        }
+
+        function checkage() {
+            var p = $("#txtage").val();
+            if (p == "") {
+                return 'please enter your age\n';
+            }
+            else {
+                return '';
+            }
+        }
+
+        $(document).ready(function () {
+            BindCountry();
+            showData();
+        });
+
+        function showData() {
+            $.ajax({
+                url: 'WebService1.asmx/show',
+                type: 'post',
+                contentType: 'application/json;charset=utf-8',
+                dataType: 'json',
+                data: "{}",
+                async:false,
+                success: function (p) {
+                    p = JSON.parse(p.d);
+                    $("#showtbl").find("tr:gt(0)").remove();
+                    for (var i = 0; i < p.length; i++) {
+                        $("#showtbl").append('<tr><td>'+p[i].name+'</td><td>'+p[i].age+'</td><td>'+p[i].address+'</td><td>'+p[i].cname+'</td><td> <input type="button" value="Delete" onclick="DeleteData('+p[i].empid+')"/></td> <td><input type="button" value="Edit" onclick="EditData('+p[i].empid+')"/></td></tr>');
+                    }
+                }
+            });
+        }
+
+        function BindCountry() {
+            $.ajax({
+                url: 'WebService1.asmx/country',
+                type: 'post',
+                contentType: 'application/json;charset=utf-8',
+                dataType: 'json',
+                data: "{}",
+                async:false,
+                success: function (p) {
+                    p = JSON.parse(p.d);
+                    for (var i = 0; i < p.length; i++) {
+                        //$("#ddlcountry").append($('<option/>').attr("value", p[i].cid).text(p[i].cname));
+                        $("#ddlcountry").append('<option value="'+p[i].cid+'">'+p[i].cname+'</option>');
+                    }
+                },
+                error: function () {
+                    alert("country not found\n");
+                }
+
+            });
+        }
+
+        function SaveData() {
+            if ($("#btnsave").val() == "Save") {
+                $.ajax({
+                    url: 'WebService1.asmx/Save',
+                    type: 'post',
+                    contentType: 'application/json;charset=utf-8',
+                    dataType: 'json',
+                    data: "{name: '" + $("#txtname").val() + "', age: '" + $("#txtage").val() + "', address: '" + $("#txtaddress").val() + "',country: '" + $("#ddlcountry").val() + "'}",
+                    success: function () {
+                        alert("Record Saved");
+                        showData();
+                        $("#txtname").val("");
+                        $("#txtage").val("");
+                        $("#txtaddress").val("");
+                        $("#ddlcountry").val("0");
+                    },
+                    error: function () {
+                        alert("Record not Saved");
+                    }
+                });
+            }
+            else {
+                $.ajax({
+                    url: 'WebService1.asmx/update',
+                    type: 'post',
+                    contentType: 'application/json;charset=utf-8',
+                    dataType: 'json',
+                    data: "{name: '" + $("#txtname").val() + "', age: '" + $("#txtage").val() + "', address: '" + $("#txtaddress").val() + "',country: '" + $("#ddlcountry").val() + "',Empid:'"+globalEmpid_viewstate+"'}",
+                    success: function () {
+                        alert("Record Updated");
+                        showData();
+                        $("#txtname").val("");
+                        $("#txtage").val("");
+                        $("#txtaddress").val("");
+                        $("#ddlcountry").val("0");
+                        $("#btnsave").val("Save");
+                    },
+                    error: function () {
+                        alert("Record not Updated");
+                    }
+                });
+            }
+        }
+
+        function DeleteData(empid) {
+            if (confirm('are you sure you want to delete data')) {
+                $.ajax({
+                    url: 'WebService1.asmx/delete',
+                    type: 'post',
+                    contentType: 'application/json;charset=utf-8',
+                    dataType: 'json',
+                    data: "{empid:'" + empid + "'}",
+                    success: function () {
+                        alert("Record Deleted");
+                        showData();
+                    },
+                    error: function () {
+                        alert("Record not Deleted");
+                    }
+                });
+            }
+        }
+
+        var globalEmpid_viewstate = 0;
+        function EditData(empid) {
+            $.ajax({
+                url: 'WebService1.asmx/edit',
+                type: 'post',
+                contentType: 'application/json;charset=utf-8',
+                dataType: 'json',
+                data: "{empid:'"+empid+"'}",
+                success: function (p) {
+                    p = JSON.parse(p.d);
+                    $("#txtname").val(p[0].name);
+                    $("#txtage").val(p[0].age);
+                    $("#txtaddress").val(p[0].address);
+                    $("#ddlcountry").val(p[0].c_name);
+                    $("#btnsave").val("Update");
+                    globalEmpid_viewstate = empid;
+                },
+                error: function () {
+                    alert("Edit Data failed");
+                }
+            });
+        }
+
+    </script>
+</head>
+<body>
+    <table>
+        <tr>
+            <td>Name:</td>
+            <td>
+                <input type="text" id="txtname" />
+            </td>
+        </tr>
+        <tr>
+            <td>Age:</td>
+            <td>
+                <input type="text" id="txtage" />
+            </td>
+        </tr>
+        <tr>
+            <td>Address:</td>
+            <td>
+                <input type="text" id="txtaddress" />
+            </td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td>
+                <select id="ddlcountry">
+                    <option value="0">--Select--</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <input type="button" id="btnsave" value="Save" onclick="return Validation()" />
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <table id="showtbl"  border="1">
+                    <tr style ="background-color:aqua">
+                        <td>Employee Name</td>
+                        <td>Employee Address</td>
+                        <td>Employee Age</td>
+                        <td>Employee Country</td>
+                        <td>Operation</td>
+                        <td>Operation</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
